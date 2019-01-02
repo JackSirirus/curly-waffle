@@ -1,0 +1,229 @@
+#-*- coding: UTF-8 -*-
+#python2.7
+#writer by ysm
+import cx_Oracle
+import os
+import xlwt
+
+os.environ['NLS_LANG'] = 'SIMPLIFIED CHINESE_CHINA.UTF8'
+
+#连接Oracle数据库
+connt=cx_Oracle.connect('hr/hrpwd@localhost:1521/XE')
+#设置游标
+cur=connt.cursor()
+print '请输入查询起始日期'
+date_start = input()
+print '请输入查询终止日期'
+date_end = input()
+address=r'C:\\%d-%d.xlsx'%(date_start,date_end)
+#list_an=['name','number']
+#with open(address,'wb+')as csvfile:
+csvwriter = xlwt.Workbook(encoding='utf-8')
+writer_sheet1=csvwriter.add_sheet('全国省份解析失败量统计')
+writer_sheet2=csvwriter.add_sheet('全国省份解析总量统计')
+writer_sheet3=csvwriter.add_sheet('城市解析失败量统计')
+writer_sheet4=csvwriter.add_sheet('城市解析总量统计')
+writer_sheet5=csvwriter.add_sheet('区县解析失败量统计')
+writer_sheet6=csvwriter.add_sheet('区县解析总量统计')
+
+ #查询语句
+    #查询每省解析失败数量
+sql1="SELECT PROVINCE,count(PROVINCE) AS provincename FROM	CRMPRD.WB_SERVICE_INFO_AREA WHERE	AREA_ID IS NULL	AND CREATED_DATE < TO_DATE( '%d', 'yyyymmdd' ) AND CREATED_DATE > TO_DATE('%d','yyyymmdd')	GROUP BY PROVINCE"%(date_end,date_start)
+   #使用查询
+cur.execute(sql1)
+    #读取
+data=cur.fetchall()
+#print data
+data_null=[]
+#写入标头
+writer_sheet1.write(0,0,'PROVINCE')
+writer_sheet1.write(0,1,'PROVINCE_NUMBER')
+   #循环显示
+csva=0
+csvb=1
+province_null_data=[]
+for a in data:
+        province_null=a[0]
+        number_null=a[1]
+        province_null_data.append('PROVINCE:',province_null,'PROVINCE_NUMBER:',number_null)
+        #print csva
+        #写入数据
+        writer_sheet1.write(csvb,csva,province_null)
+        writer_sheet1.write(csvb,csva+1,number_null)
+        #csva=csva+1
+        csvb=csvb+1
+        #print csva,csvb
+#print data_null
+print '查询每省解析失败数量完成'
+
+    #查询每省解析数量
+sql2="SELECT PROVINCE,count(PROVINCE) AS provincename FROM	CRMPRD.WB_SERVICE_INFO_AREA WHERE	 CREATED_DATE < TO_DATE( '%d', 'yyyymmdd' ) AND CREATED_DATE > TO_DATE('%d','yyyymmdd')	GROUP BY PROVINCE"%(date_end,date_start)
+cur.execute(sql2)
+    # 读取
+data = cur.fetchall()
+#print data
+data_all=[]
+    # 循环显示
+#写入表头
+writer_sheet2.write(0,0,'PROVINCE')
+writer_sheet2.write(0,1,'number')
+csva=0
+csvb=1
+for b in data:
+        province_all = b[0]
+        number_all = b[1]
+        #print name_all, number_all
+
+        #writer_sheet2.write(list_all)
+        #写入数据
+        writer_sheet2.write(csvb,csva, province_all)
+        writer_sheet2.write(csvb,csva+1 , number_all)
+        csvb = csvb + 1
+
+print '查询每省解析数量完成'
+
+ #查询语句
+    #查询城市解析失败数量
+sql1="SELECT PROVINCE，CITY,count(CITY) AS provincename FROM	CRMPRD.WB_SERVICE_INFO_AREA WHERE	AREA_ID IS NULL	AND CREATED_DATE < TO_DATE( '%d', 'yyyymmdd' ) AND CREATED_DATE > TO_DATE('%d','yyyymmdd')	GROUP BY PROVINCE，CITY"%(date_end,date_start)
+   #使用查询
+cur.execute(sql1)
+    #读取
+data=cur.fetchall()
+#print data
+data_null=[]
+#写入标头
+writer_sheet3.write(0,0,'PROVINCE')
+writer_sheet3.write(0,1,'CITY')
+writer_sheet3.write(0,2,'NUMBER')
+   #循环显示
+csva=0
+csvb=1
+for a in data:
+        province_null=a[0]
+        city_null=a[1]
+        number_null=a[2]
+        #print csva
+        #写入数据
+        writer_sheet3.write(csvb,csva,province_null)
+        writer_sheet3.write(csvb,csva+1,city_null)
+        writer_sheet3.write(csvb,csva+2,number_null)
+        #csva=csva+1
+        csvb=csvb+1
+        #print csva,csvb
+#print data_null
+print '查询城市解析失败数量完成'
+
+ #查询语句
+    #查询城市解析总数量
+sql1="SELECT PROVINCE，CITY,count(CITY) AS provincename FROM	CRMPRD.WB_SERVICE_INFO_AREA WHERE	 CREATED_DATE < TO_DATE( '%d', 'yyyymmdd' ) AND CREATED_DATE > TO_DATE('%d','yyyymmdd')	GROUP BY PROVINCE，CITY"%(date_end,date_start)
+   #使用查询
+cur.execute(sql1)
+    #读取
+data=cur.fetchall()
+#print data
+data_null=[]
+#写入标头
+writer_sheet4.write(0,0,'PROVINCE')
+writer_sheet4.write(0,1,'CITY')
+writer_sheet4.write(0,2,'NUMBER')
+   #循环显示
+csva=0
+csvb=1
+for a in data:
+        province_null=a[0]
+        city_null=a[1]
+        number_null=a[2]
+
+        #print csva
+        #写入数据
+        writer_sheet4.write(csvb,csva,province_null)
+        writer_sheet4.write(csvb,csva+1,city_null)
+        writer_sheet4.write(csvb,csva+2,number_null)
+        #csva=csva+1
+        csvb=csvb+1
+        #print csva,csvb
+#print data_null
+print '查询城市解析总数量完成'
+
+ #查询语句
+    #查询区县解析失败数量
+sql1="SELECT PROVINCE，CITY，REGION,count(REGION) AS NUBER FROM	CRMPRD.WB_SERVICE_INFO_AREA WHERE	AREA_ID IS NULL	AND CREATED_DATE < TO_DATE( '%d', 'yyyymmdd' ) AND CREATED_DATE > TO_DATE('%d','yyyymmdd')	GROUP BY PROVINCE，CITY，REGION"%(date_end,date_start)
+   #使用查询
+cur.execute(sql1)
+    #读取
+data=cur.fetchall()
+#print data
+data_null=[]
+#写入标头
+writer_sheet5.write(0,0,'PROVINCE')
+writer_sheet5.write(0,1,'CITY')
+writer_sheet5.write(0,2,'REGION')
+writer_sheet5.write(0,3,'NUMBER')
+   #循环显示
+csva=0
+csvb=1
+for a in data:
+        province_null=a[0]
+        city_null=a[1]
+        region_null=a[2]
+        number_null=a[3]
+        #print csva
+        #写入数据
+        writer_sheet5.write(csvb,csva,province_null)
+        writer_sheet5.write(csvb,csva+1,city_null)
+        writer_sheet5.write(csvb,csva+2,region_null)
+        writer_sheet5.write(csvb,csva+3,number_null)
+        #csva=csva+1
+        csvb=csvb+1
+        #print csva,csvb
+#print data_null
+print '查询区县解析失败数量完成'
+
+#查询语句
+    #查询区县解析失败数量
+sql1="SELECT PROVINCE，CITY，REGION,count(REGION) AS NUBER FROM	CRMPRD.WB_SERVICE_INFO_AREA WHERE	CREATED_DATE < TO_DATE( '%d', 'yyyymmdd' ) AND CREATED_DATE > TO_DATE('%d','yyyymmdd')	GROUP BY PROVINCE，CITY，REGION"%(date_end,date_start)
+   #使用查询
+cur.execute(sql1)
+    #读取
+data=cur.fetchall()
+#print data
+data_null=[]
+#写入标头
+writer_sheet6.write(0,0,'PROVINCE')
+writer_sheet6.write(0,1,'CITY')
+writer_sheet6.write(0,2,'REGION')
+writer_sheet6.write(0,3,'NUMBER')
+   #循环显示
+csva=0
+csvb=1
+for a in data:
+        province_all=a[0]
+        city_all=a[1]
+        region_all=a[2]
+        number_all=a[3]
+        #print csva
+        #写入数据
+        writer_sheet6.write(csvb,csva,province_all)
+        writer_sheet6.write(csvb,csva+1,city_all)
+        writer_sheet6.write(csvb,csva+2,region_all)
+        writer_sheet6.write(csvb,csva+3,number_all)
+        #csva=csva+1
+        csvb=csvb+1
+        #print csva,csvb
+#print data_null
+print '查询区县解析失败数量完成'
+
+print '写入完成'
+#except:
+#    print 'Error'
+
+#关闭游标语句
+cur.close()
+#关闭数据连接
+connt.commit()
+connt.close()
+
+
+#保存数据
+csvwriter.save(r'C:\\%s-%s.csv'%(date_start,date_end))
+
