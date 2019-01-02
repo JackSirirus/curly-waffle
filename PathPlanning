@@ -1,0 +1,62 @@
+#-*- coding: UTF-8 -*-
+#python2.7
+#writer by ysm
+import folium,os
+import urllib2
+import json
+
+#获取起点和终点坐标
+qidian_lng='117.335028'
+qidian_lat='39.989643'
+qidian=qidian_lng+','+qidian_lat
+zhongdian_lng='117.334446'
+zhongdian_lat='39.90816'
+zhongdian=zhongdian_lng+','+zhongdian_lat
+url_smartmapxa='http://rc.smartmapx.com/routing?origin='
+url_smartmapxb='&destination='
+#添加底图
+
+tileset='http://dev.smartmapx.com:8082/postgresql/basemap2/{z}/{x}/{y}/tile@2x.png'#SmartMaoX栅格地图
+#tileset='http://www.google.cn/maps/vt?lyrs=s&x={x}&y={y}&z={z}'#Google栅格影像地图
+#tileset='https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}'#Autonavi栅格影像地图
+#调用路径规划引擎
+url=url_smartmapxa+qidian+url_smartmapxb+zhongdian
+#url='http://rc.smartmapx.com/routing?origin=116.301028,39.989643&destination=116.334446,39.90816'
+urlopen=urllib2.urlopen(url)
+#提取路径规划拐点
+jsonread=json.load(urlopen)
+listjson=jsonread['route']['paths']
+
+#强制转换字符串
+#print qidian_lng,qidian_lat
+qidian_lat1=float(qidian_lat)
+qidian_lng2=float(qidian_lng)
+zhongdian_lat1=float(zhongdian_lat)
+zhongdian_lng2=float(zhongdian_lng)
+#设置地图中心点
+#m=folium.Map(location=[39.90816,116.334446],zoom_start=15,control_scale=True,zoom_control=True,tiles=tileset,attr='My Data Attribution')
+m=folium.Map(location=[qidian_lat1,qidian_lng2],zoom_start=10,control_scale=True,zoom_control=True,tiles=tileset,attr='My Data Attribution')
+#标记起点
+folium.Marker([qidian_lat1,qidian_lng2]).add_to(m)
+#标记终点
+folium.Marker([zhongdian_lat1,zhongdian_lng2]).add_to(m)
+#绘制路径
+location=[]
+for i in listjson:
+    i=i.get('polyline')
+    print i
+    for ilist in i:
+        lnt=ilist[0]
+        lat=ilist[1]
+        print lat,lnt
+        folium.RegularPolygonMarker([ilist[1],ilist[0]],fill_color='#769d96',number_of_sides=8,radius=5).add_to(m)
+        #folium.Marker([ilist[1], ilist[0]], popup='Mt. Hood Meadows',icon=folium.Icon(icon='info-sign')).add_to(m)
+        location.append([ilist[1],ilist[0]])
+        folium.PolyLine(location,color='blue').add_to(m)
+
+
+#folium.Marker([lat,lnt],popup='<i>Mt.Hood Meadows</s>').add_to(m)
+#m.create_map(path='map_osm.html')
+#保存html文件
+m.save(os.path.join(r'C:\\','PathPlanning_SmartMapx.html'))
+os.startfile('C:\\PathPlanning_SmartMapX.html')
