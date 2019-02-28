@@ -1,0 +1,242 @@
+# -*- coding: utf-8 -*-
+#python3.7
+#writer by ysm
+import csv
+from requests import request
+from geopy.distance import geodesic
+from math import radians, cos, sin, asin, sqrt
+import timeit
+
+def lingtu_Geographic_analysis(address):
+    heads={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36'}
+    #api_url='http://10.19.33.222/gc?address='
+    api_url_lingtu='http://api.smartmapx.com/geo?address='
+    api_url_lingtu_key='&apikey=key'
+    url=api_url_lingtu+address
+    try:
+      response=request('get',url,headers=heads)
+      api_response=response.json()
+      response.close()
+      lingtu_longitude=api_response['result']['longitude']
+      lingtu_latitude=api_response['result']['latitude']
+      lingtu_longitude_latitude=lingtu_longitude,lingtu_latitude
+
+      return lingtu_longitude,lingtu_latitude
+    except Exception as e:
+        print()
+
+
+def tianditu_Geographic_analysis(address):
+    heads = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36'}
+    api_url_tianditu = 'http://api.tianditu.gov.cn/geocoder?ds={"keyWord":"'
+    api_url_tianditu_key='"}&tk=key'
+    url = api_url_tianditu + address+api_url_tianditu_key
+    try:
+        response = request('get', url, headers=heads)
+        api_response = response.json()
+        response.close()
+        tianditu_longitude = api_response['location']['lon']
+        tianditu_latitude = api_response['location']['lat']
+        tianditu_longitude_latitude = tianditu_longitude, tianditu_latitude
+        return tianditu_longitude,tianditu_latitude
+    except Exception as e:
+        print()
+
+def baidu_Geographic_analysis(address):
+    heads = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36'}
+    api_url_baidu = 'http://api.map.baidu.com/geocoder/v2/?address='
+    api_url_baidu_key='&output=json&ret_coordtype=gcj02ll&ak=key'
+    url = api_url_baidu + address+api_url_baidu_key
+    try:
+        response = request('get', url, headers=heads)
+        api_response = response.json()
+        response.close()
+        baidu_longitude = api_response['result']['location']['lng']
+        baidu_latitude = api_response['result']['location']['lat']
+        baidu_longitude_latitude = baidu_longitude, baidu_latitude
+        return baidu_longitude,baidu_latitude
+    except Exception as e:
+        print()
+
+
+def gaode_Geographic_analysis(address):
+    heads = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36'}
+    api_url_gaode = 'http://restapi.amap.com/v3/geocode/geo?address='
+    api_url_gaode_key='&output=json&key=key'
+    url = api_url_gaode + address+api_url_gaode_key
+    try:
+        response = request('get', url, headers=heads)
+        api_response = response.json()
+        response.close()
+        gaode_longitude_latitude = api_response['geocodes'][0]['location']
+        gaode_longitde_latitude_split=gaode_longitude_latitude.split(',')
+        return gaode_longitde_latitude_split
+    except Exception as e:
+        print()
+
+
+#自建坐标直线距离公式
+def lon_lat_distance(lng1,lat1,lng2,lat2):
+    # 将十进制度数转化为弧度
+    lng1, lat1, lng2, lat2 = map(radians, [float(lng1), float(lat1), float(lng2), float(lat2)])  # 经纬度转换成弧度
+    dlon = lng2 - lng1
+    dlat = lat2 - lat1
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    distance = 2 * asin(sqrt(a)) * 6371 * 1000  # 地球平均半径，6371km
+    distance = round(distance / 1000, 3)
+    return distance
+
+
+address_save_lon_lat='C:\\**.csv'
+csv_address='C:\\**.csv'
+open_csv=open(csv_address,'r')
+read_csv=csv.reader(open_csv)
+poi_address_num=1
+list_colum = ['poi_address','lingtu_longitude_latitude','tianditu_longitude_latitude','lingtu_tianditu_distance',
+        'baidu_longitude_latitude','lingtu_baidu_distance','gaode_longitde_latitude',
+        'lingtu_gaode_distance','baidu_longitude_latitude','gaode_longitde_latitude',
+        'baidu_gaode_distance)','tianditu_longitude_latitude','baidu_longitude_latitude',
+        'tianditu_baidu_distance','tianditu_longitude_latitude','gaode_longitde_latitude','tianditu_gaode_distance'
+                                          ]
+#灵图与天地图解析统计
+lingtu_tianditu_distance_1=0
+lingtu_tianditu_distance_1_2=0
+lingtu_tianditu_distangce_3=0
+#灵图与高德解析统计
+lingtu_gaode_distance_1=0
+lingtu_gaode_distance_1_2=0
+lingtu_gaode_distance_3=0
+#灵图与百度解析统计
+lingtu_baidu_distance_1=0
+lingtu_baidu_distance_1_2=0
+lingtu_baidu_distance_3=0
+#百度与高德解析统计
+baidu_gaode_distance_1=0
+baidu_gaode_distance_1_2=0
+baidu_gaode_distance_3=0
+#天地图与高德继续统计
+tianditu_gaode_distance_1=0
+tianditu_gaode_distance_1_2=0
+tianditu_gaode_distance_3=0
+#天地图与百度解析统计
+tianditu_baidu_distance_1=0
+tianditu_baidu_distance_1_2=0
+tianditu_baidu_distance_3=0
+
+
+
+with open(address_save_lon_lat, 'a', newline='') as  datacsv:
+    save_csv = csv.writer(datacsv, dialect='excel')
+    save_csv.writerow(list_colum)
+for ax in read_csv:
+  poi_address=ax[7]+ax[8]
+  lingtu_coordinate=ax[17]
+  print(poi_address_num)
+  lingtu_longitude_latitude=lingtu_Geographic_analysis(poi_address)
+  print('灵图接口解析完成')
+  tianditu_longitude_latitude=tianditu_Geographic_analysis(poi_address)
+  print('天地图接口解析完成')
+  baidu_longitude_latitude=baidu_Geographic_analysis(poi_address)
+  print('百度接口解析完成')
+  gaode_longitde_latitude=gaode_Geographic_analysis(poi_address)
+  print('高德接口解析完成')
+  poi_address_num+=1
+  try:
+
+      list = []
+      lingtu_tianditu_distance = lon_lat_distance(lingtu_longitude_latitude[0], lingtu_longitude_latitude[1],tianditu_longitude_latitude[0],tianditu_longitude_latitude[1])
+      print('灵图与天地图解析距离完成！')
+      if lingtu_tianditu_distance<=1 :
+          lingtu_tianditu_distance_1+=1
+      elif 1<=lingtu_tianditu_distance<=2:
+          lingtu_tianditu_distance_1_2+=1
+      elif lingtu_tianditu_distance>2:
+          lingtu_tianditu_distangce_3+=1
+      lingtu_baidu_distance=lon_lat_distance(lingtu_longitude_latitude[0], lingtu_longitude_latitude[1],baidu_longitude_latitude[0],baidu_longitude_latitude[1])
+      print('灵图与百度解析距离完成！')
+      if lingtu_baidu_distance<=1 :
+          lingtu_baidu_distance_1+=1
+      elif 1<=lingtu_baidu_distance<=2:
+          lingtu_baidu_distance_1_2+=1
+      elif lingtu_baidu_distance>2:
+          lingtu_baidu_distance_3+=1
+      lingtu_gaode_distance=lon_lat_distance(lingtu_longitude_latitude[0], lingtu_longitude_latitude[1],gaode_longitde_latitude[0],gaode_longitde_latitude[1])
+      print('灵图与高德解析距离完成！')
+      if lingtu_gaode_distance<=1 :
+          lingtu_gaode_distance_1+=1
+      elif 1<=lingtu_gaode_distance<=2:
+          lingtu_gaode_distance_1_2+=1
+      elif lingtu_gaode_distance>2:
+          lingtu_gaode_distance_3+=1
+      baidu_gaode_distance=lon_lat_distance(baidu_longitude_latitude[0],baidu_longitude_latitude[1],gaode_longitde_latitude[0],gaode_longitde_latitude[1])
+      print('百度与高德解析距离完成！')
+      if baidu_gaode_distance<=1 :
+          baidu_gaode_distance_1+=1
+      elif 1<=baidu_gaode_distance<=2:
+          baidu_gaode_distance_1_2+=1
+      elif baidu_gaode_distance>2:
+          baidu_gaode_distance_3+=1
+      tianditu_baidu_distance=lon_lat_distance(tianditu_longitude_latitude[0],tianditu_longitude_latitude[1],baidu_longitude_latitude[0],baidu_longitude_latitude[1])
+      print('天地图与百度解析距离完成!')
+      if tianditu_baidu_distance<=1 :
+          tianditu_baidu_distance_1+=1
+      elif 1<=tianditu_baidu_distance<=2:
+          tianditu_baidu_distance_1_2+=1
+      elif tianditu_baidu_distance>2:
+          tianditu_baidu_distance_3+=1
+      tianditu_gaode_distance=lon_lat_distance(tianditu_longitude_latitude[0],tianditu_longitude_latitude[1],gaode_longitde_latitude[0],gaode_longitde_latitude[1])
+      print('天地图与高德解析距离完成!')
+      if tianditu_gaode_distance<=1 :
+          tianditu_gaode_distance_1+=1
+      elif 1<=tianditu_gaode_distance<=2:
+          tianditu_gaode_distance_1_2+=1
+      elif tianditu_gaode_distance>2:
+          tianditu_gaode_distance_3+=1
+
+      list.append(poi_address)
+      list.append(lingtu_longitude_latitude)
+      list.append(tianditu_longitude_latitude)
+      list.append(lingtu_tianditu_distance)
+      list.append(baidu_longitude_latitude)
+      list.append(lingtu_baidu_distance)
+      list.append(gaode_longitde_latitude)
+      list.append(lingtu_gaode_distance)
+      list.append(baidu_longitude_latitude)
+      list.append(gaode_longitde_latitude)
+      list.append(baidu_gaode_distance)
+      list.append(tianditu_longitude_latitude)
+      list.append(baidu_longitude_latitude)
+      list.append(tianditu_baidu_distance)
+      list.append(tianditu_longitude_latitude)
+      list.append(gaode_longitde_latitude)
+      list.append(tianditu_gaode_distance)
+      print(list)
+
+      with open(address_save_lon_lat, 'a', newline='') as  datacsv:
+            save_csv = csv.writer(datacsv, dialect='excel')
+            save_csv.writerow(list)
+
+      '''
+      lingtu_tianditu_distance_geopy=geodesic((lingtu_longitude_latitude[1],lingtu_longitude_latitude[0]),(tianditu_longitude_latitude[1],tianditu_longitude_latitude[0]))
+      print(lingtu_tianditu_distance_geopy)
+      '''
+
+
+  except Exception as e:
+      print(e)
+list_distance_name=['灵图与天地图解析距离小于1公里','灵图与天地图解析距离在1公里与2公里之间','灵图与天地图解析距离在2公里以上的',
+                    '灵图与百度解析距离小于1公里','灵图与百度解析距离在1公里与2公里之间','灵图与百度解析距离在2公里以上的',
+                    '百度与高德解析距离小于1公里','百度与高德解析距离在1公里与2公里之间','百度与高德解析距离在2公里以上的',
+                    '天地图与百度解析距离小于1公里','天地图与百度解析距离在1公里与2公里之间','天地图与百度解析距离在2公里以上的',
+                    '天地图与高德解析距离小于1公里','天地图与高德解析距离在1公里与2公里之间','天地图与高德解析距离在2公里以上的','解析地址总数'
+                    ]
+list_distance=[lingtu_tianditu_distance_1,lingtu_tianditu_distance_1_2,lingtu_tianditu_distangce_3,
+               lingtu_baidu_distance_1,lingtu_baidu_distance_1_2,lingtu_baidu_distance_3,
+               baidu_gaode_distance_1,baidu_gaode_distance_1_2,baidu_gaode_distance_3,
+               tianditu_baidu_distance_1,tianditu_baidu_distance_1_2,tianditu_baidu_distance_3,
+               tianditu_gaode_distance_1,tianditu_gaode_distance_1_2,tianditu_gaode_distance_3,poi_address_num
+               ]
+with open(address_save_lon_lat, 'a', newline='') as  datacsv:
+    save_csv = csv.writer(datacsv, dialect='excel')
+    save_csv.writerow(list_distance_name)
+    save_csv.writerow(list_distance)
