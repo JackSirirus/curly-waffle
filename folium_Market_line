@@ -1,0 +1,152 @@
+# -*- coding: utf-8 -*-
+# python3.7
+# writer by ysm
+import csv
+import folium, os
+
+
+csv_address = 'C:\\Users\\Administrator\\Desktop\\folium20190306.csv'
+#tileset = 'https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}'  # Autonavi栅格影像地图
+
+csv_address_open = open(csv_address, 'r')
+csv_address_reader = csv.reader(csv_address_open)
+tileset='http://www.google.cn/maps/vt?lyrs=s&x={x}&y={y}&z={z}'
+
+#去除多余内容
+def lon_lat(lonlat):
+    lonlat_split1 = lonlat.replace('(', '')
+    # print(lonlat_split1)
+    lonlat_split2 = lonlat_split1.replace(')', '')
+    # print(lonlat_split2)
+    lonlat_split3 = lonlat_split2.replace('[', '')
+    lonlat_split4 = lonlat_split3.replace(']', '')
+    lonlat_split5 = lonlat_split4.replace("'", '')
+    lonlat_split = lonlat_split5.split(',')
+    # print(lonlat_split)
+    lon = lonlat_split[0]
+    lat = lonlat_split[1]
+    return lon, lat
+
+#线段长度起始坐标
+def map_line(i,start_latitude_list,start_longitude_list,end_latitude_list,end_longitude_list):
+    line_start = []
+    line_end = []
+    line_start_end = []
+    line_start.append(start_latitude_list[i])
+    line_start.append(start_longitude_list[i])
+    line_start_end.append(line_start)
+    line_end.append(end_latitude_list[i])
+    line_end.append(end_longitude_list[i])
+    line_start_end.append(line_end)
+    print(line_start_end)
+    return line_start_end
+
+#地图打点
+def makm_map(poi_address_list):
+    map_m = folium.Map(location=[39.925318, 116.366833], zoom_start=10,tiles=tileset,attr='@LINGTU')
+    for i in range(len(poi_address_list)):
+        print(i)
+
+        lingtu_tooltip=['灵图',poi_address_list[i],lingtu_longitude_latitude_list_ls[i]]
+        tianditu_tooltip=['天地图',poi_address_list[i],tianditu_longitude_latitude_list_ls[i]]
+        baidu_tooltip=['百度',poi_address_list[i],baidu_longitude_latitude_list_ls[i]]
+        gaode_tooltip=['高德',poi_address_list[i],gaode_longitude_latitude_list_ls[i]]
+        #地图标注
+        line_lingtu_tianditu=map_line(i,lingtu_latitude_list,lingtu_longitude_list,tianditu_latitude_list,tianditu_longitude_list)
+        line_lingtu_baidu=map_line(i,lingtu_latitude_list,lingtu_longitude_list,baidu_latitude_list,baidu_longitude_list)
+        line_lingtu_gaode=map_line(i,lingtu_latitude_list,lingtu_longitude_list,gaode_latitude_list,gaode_longitude_list)
+        #地图划线
+        folium.PolyLine(line_lingtu_tianditu,tooltip=lingtu_tianditu_distance_list[i],color='red').add_to(map_m)
+        folium.PolyLine(line_lingtu_baidu,tooltip=lingtu_baidu_distance_list[i],color='black').add_to(map_m)
+        folium.PolyLine(line_lingtu_gaode,tooltip=lingtu_gaode_distance_list[i],color='blue').add_to(map_m)
+        #地图打点
+        folium.Marker([ lingtu_latitude_list[i],lingtu_longitude_list[i]],icon=folium.Icon(color='red'),tooltip=lingtu_tooltip).add_to(map_m)
+        folium.Marker([tianditu_latitude_list[i], tianditu_longitude_list[i]], icon=folium.Icon(color='green'),tooltip=tianditu_tooltip).add_to(map_m)
+        folium.Marker([baidu_latitude_list[i], baidu_longitude_list[i]], icon=folium.Icon(color='blue'),tooltip=baidu_tooltip).add_to(map_m)
+        folium.Marker([gaode_latitude_list[i], gaode_longitude_list[i]], icon=folium.Icon(color='orange'),tooltip=gaode_tooltip).add_to(map_m)
+    map_m.save(os.path.join(r'C:\\Users\\Administrator\\Desktop\\', 'folium.html'))
+    print('正在保存HTML页面')
+
+
+poi_address_num = 0
+lingtu_latitude_list = []
+lingtu_longitude_list = []
+poi_address_list=[]
+tianditu_longitude_list=[]
+tianditu_latitude_list=[]
+baidu_longitude_list=[]
+baidu_latitude_list=[]
+gaode_longitude_list=[]
+gaode_latitude_list=[]
+
+lingtu_tianditu_distance_list=[]
+lingtu_baidu_distance_list=[]
+lingtu_gaode_distance_list=[]
+
+lingtu_longitude_latitude_list_ls=[]
+baidu_longitude_latitude_list_ls=[]
+tianditu_longitude_latitude_list_ls=[]
+gaode_longitude_latitude_list_ls=[]
+# try:
+for ax in csv_address_reader:
+    poi_address_num += 1
+#提取数据
+    poi_address = ax[0]
+    lingtu_longitude_latitude = ax[1]
+    tianditu_longitude_latitude=ax[2]
+    baidu_longitude_latitude=ax[4]
+    gaode_longitude_latitude = ax[6]
+    lingtu_tianditu_distance=ax[3]
+    lingtu_baidu_distance=ax[5]
+    lingtu_gaode_distance=ax[7]
+#除去多余符号
+    lingtu_longitude_latitude_list = lon_lat(lingtu_longitude_latitude)
+    tianditu_longitude_latitude_list=lon_lat(tianditu_longitude_latitude)
+    baidu_longitude_latitude_list = lon_lat(baidu_longitude_latitude)
+    gaode_longitude_latitude_list = lon_lat(gaode_longitude_latitude)
+#变float
+    lingtu_longitude = float(lingtu_longitude_latitude_list[0])
+    lingtu_latitude = float(lingtu_longitude_latitude_list[1])
+    tianditu_longitude=float(tianditu_longitude_latitude_list[0])
+    tianditu_latitude=float(tianditu_longitude_latitude_list[1])
+    baidu_longitude = float(baidu_longitude_latitude_list[0])
+    baidu_latitude = float(baidu_longitude_latitude_list[1])
+    gaode_longitude = float(gaode_longitude_latitude_list[0])
+    gaode_latitude = float(gaode_longitude_latitude_list[1])
+#写入空集
+    poi_address_list.append(poi_address)
+    lingtu_latitude_list.append(lingtu_latitude)
+    lingtu_longitude_list.append(lingtu_longitude)
+    tianditu_longitude_list.append(tianditu_longitude)
+    tianditu_latitude_list.append(tianditu_latitude)
+    baidu_longitude_list.append(baidu_longitude)
+    baidu_latitude_list.append(baidu_latitude)
+    gaode_latitude_list.append(gaode_latitude)
+    gaode_longitude_list.append(gaode_longitude)
+
+    lingtu_tianditu_distance_list.append(lingtu_tianditu_distance)
+    lingtu_baidu_distance_list.append(lingtu_baidu_distance)
+    lingtu_gaode_distance_list.append(lingtu_gaode_distance)
+
+    lingtu_longitude_latitude_list_ls.append(lingtu_longitude_latitude_list)
+    baidu_longitude_latitude_list_ls.append(baidu_longitude_latitude_list)
+    tianditu_longitude_latitude_list_ls.append(tianditu_longitude_latitude_list)
+    gaode_longitude_latitude_list_ls.append(gaode_longitude_latitude_list)
+
+
+
+
+'''
+except Exception as e:
+      print(e)
+#folium.Marker([lingtu_latitude,lingtu_longitude],popup='<i>Mt. Hood Meadows</i>').add_to(map_m)
+
+'''
+#保存开始循环画图
+print(range(len( poi_address_list)))
+makm_map(poi_address_list)
+'''
+print('正在打开HTML页面')
+os.startfile(r'C:\\Users\\Administrator\\Desktop\\folium.html')
+print('打开完成')
+'''
