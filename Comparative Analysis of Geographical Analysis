@@ -32,6 +32,7 @@ def tianditu_Geographic_analysis(address):
     api_url_tianditu_key='"}&tk=key'
     url = api_url_tianditu + address+api_url_tianditu_key
     try:
+    
         response = request('get', url, headers=heads)
         api_response = response.json()
         response.close()
