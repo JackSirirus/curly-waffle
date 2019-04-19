@@ -1,0 +1,137 @@
+# -*- coding: utf-8 -*-
+#python3.7
+#writer by ysm
+import csv
+from requests import request
+from geopy.distance import geodesic
+from math import radians, cos, sin, asin, sqrt
+import time
+
+#自建坐标直线距离公式
+def lon_lat_distance(lng1,lat1,lng2,lat2):
+    # 将十进制度数转化为弧度
+    lng1, lat1, lng2, lat2 = map(radians, [float(lng1), float(lat1), float(lng2), float(lat2)])  # 经纬度转换成弧度
+    dlon = lng2 - lng1
+    dlat = lat2 - lat1
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    distance = 2 * asin(sqrt(a)) * 6371 * 1000  # 地球平均半径，6371km
+    distance = round(distance / 1000, 3)
+    return distance
+#获取时间
+localstime=time.strftime("%Y%m%d%H%M%S", time.localtime())
+localstime_str=str(localstime)
+
+#距离计算和统计
+def lon_lat_distance_num(lon_star,lat_star,lon_end,lat_end,distance_1,distance_2,distance_3):
+      distance_num=lon_lat_distance(lon_star, lat_star,lon_end,lat_end)
+      if distance_num<=1 :
+          distance_1+=1
+      elif 1<=distance_num<=2:
+          distance_2+=1
+      elif distance_num>2:
+          distance_3+=1
+
+address_save_lon_lat='C:\\Users\\Administrator\\Desktop\\test\\灵图百度高德NM_SERVER_INF0418.csv'
+address_save_distance='C:\\Users\\Administrator\\Desktop\\test\\%sNM_SERVER_distance.csv'%localstime_str
+address_save_distance_n='C:\\Users\\Administrator\\Desktop\\test\\num_%sNM_SERVER_distance.csv'%localstime_str
+csv_address='C:\\Users\\Administrator\\Desktop\\NM_SERVER_INF0417.csv'
+open_csv=open(address_save_lon_lat,'r')
+read_csv_lonlat=csv.reader(open_csv)
+poi_address_num=0
+
+
+#灵图与高德解析统计
+lingtu_gaode_distance_1=0
+lingtu_gaode_distance_1_2=0
+lingtu_gaode_distance_3=0
+#灵图与百度解析统计
+lingtu_baidu_distance_1=0
+lingtu_baidu_distance_1_2=0
+lingtu_baidu_distance_3=0
+#百度与高德解析统计
+baidu_gaode_distance_1=0
+baidu_gaode_distance_1_2=0
+baidu_gaode_distance_3=0
+
+list_distance_name=['服务商编码','服务商地址','灵图坐标','百度坐标','lingtu_baidu_distance_num','灵图坐标','高德坐标','lingtu_gaode_distance_num','百度坐标','高德坐标','baidu_gaode_distance_num']
+list_distance_num_name=['灵图百度距离0.5km','灵图百度距离0.5-1km','灵图百度距离1km以上',
+                    '灵图高德距离0.5km','灵图高德距离0.5-1km','灵图高德距离1km以上',
+                    '高德百度距离0.5km','高德百度距离0.5-1km','高德百度距离1km以上'
+                    ]
+list_distance_num=[]
+with open(address_save_distance, 'a', newline='') as  datacsv:
+           save_csv = csv.writer(datacsv)
+           save_csv.writerow(list_distance_name)
+           #save_csv.writerow(list_server_code_address_distance)
+           #save_csv.close
+           datacsv.close()
+
+with open(address_save_lon_lat, 'a', newline='') as  datacsv_lonlat:
+ csv_lonlat = csv.writer(datacsv_lonlat)
+ #save_csv.writerow(list)
+ for lonlat in read_csv_lonlat:
+     server_code=lonlat[0]
+     server_address=lonlat[1]
+     lingtu_lt=lonlat[2]
+     lt=lingtu_lt.replace('(','')
+     lingtu_longitude_latitude_str=lt.replace(')','')
+     lingtu_longitude_latitude=lingtu_longitude_latitude_str.split(',')
+
+     baidu_lt=lonlat[7]
+     lt_b=baidu_lt.replace('(','')
+     baidu_longitude_latitude_str=lt_b.replace(')','')
+     baidu_longitude_latitude=baidu_longitude_latitude_str.split(',')
+
+     gaode_lt=lonlat[5]
+     lt_g=gaode_lt.replace("['","")
+     gaode_longitude_latitude_str1=lt_g.replace("']","")
+     gaode_longitude_latitude_str=gaode_longitude_latitude_str1.replace("', '",",")
+     gaode_longitude_latitude=gaode_longitude_latitude_str.split(',')
+     try:
+      list_server_code_address_distance= []
+
+      lingtu_baidu_distance_num=lon_lat_distance(lingtu_longitude_latitude[0], lingtu_longitude_latitude[1],baidu_longitude_latitude[0],baidu_longitude_latitude[1])
+      if lingtu_baidu_distance_num<=0.5 :
+          lingtu_baidu_distance_1=lingtu_baidu_distance_1+1
+      elif 0.5<=lingtu_baidu_distance_num<=1:
+          lingtu_baidu_distance_1_2=lingtu_baidu_distance_1_2+1
+      elif lingtu_baidu_distance_num>1:
+          lingtu_baidu_distance_3=lingtu_baidu_distance_3+1
+      print('灵图与百度解析距离完成！')
+
+      lingtu_gaode_distance_num=lon_lat_distance(lingtu_longitude_latitude[0], lingtu_longitude_latitude[1],gaode_longitude_latitude[0],gaode_longitude_latitude[1])
+      if lingtu_gaode_distance_num<=0.5 :
+          lingtu_gaode_distance_1=lingtu_gaode_distance_1+1
+      elif 0.5<=lingtu_gaode_distance_num<=1:
+          lingtu_gaode_distance_1_2=lingtu_gaode_distance_1_2+1
+      elif lingtu_gaode_distance_num>1:
+          lingtu_gaode_distance_3=lingtu_gaode_distance_3+1
+      print('灵图与高德解析距离完成！')
+
+      baidu_gaode_distance_num=lon_lat_distance(baidu_longitude_latitude[0],baidu_longitude_latitude[1],gaode_longitude_latitude[0],gaode_longitude_latitude[1])
+      if baidu_gaode_distance_num<=0.5 :
+          baidu_gaode_distance_1=baidu_gaode_distance_1+1
+      elif 0.5<=baidu_gaode_distance_num<=1:
+          baidu_gaode_distance_1_2=baidu_gaode_distance_1_2+1
+      elif baidu_gaode_distance_num>1:
+          baidu_gaode_distance_3=baidu_gaode_distance_3+1
+      print('百度与高德解析距离完成')
+      list_server_code_address_distance=[server_code,server_address,lingtu_longitude_latitude,baidu_longitude_latitude,lingtu_baidu_distance_num,
+                                         lingtu_longitude_latitude,gaode_longitude_latitude,lingtu_gaode_distance_num,
+                                         baidu_longitude_latitude,gaode_longitude_latitude,baidu_gaode_distance_num]
+      print(list_server_code_address_distance)
+      with open(address_save_distance, 'a', newline='') as  datacsv:
+           save_csv = csv.writer(datacsv)
+           #save_csv.writerow(list_distance_name)
+           save_csv.writerow(list_server_code_address_distance)
+           #save_csv.close
+           datacsv.close()
+     except Exception as e:
+      print(e)
+list_distance_num=[lingtu_baidu_distance_1,lingtu_baidu_distance_1_2,lingtu_baidu_distance_3,lingtu_gaode_distance_1,lingtu_gaode_distance_1_2,lingtu_gaode_distance_3,baidu_gaode_distance_1,baidu_gaode_distance_1_2,baidu_gaode_distance_3]
+with open(address_save_distance, 'a', newline='') as  datacsv:
+           save_csv_n = csv.writer(datacsv)
+           save_csv_n.writerow(list_distance_num_name)
+           save_csv_n.writerow(list_distance_num)
+           #save_csv_n.close
+           datacsv.close()
