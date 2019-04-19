@@ -1,0 +1,183 @@
+# -*- coding: utf-8 -*-
+#python3.7
+#writer by ysm
+import csv
+from requests import request
+from geopy.distance import geodesic
+from math import radians, cos, sin, asin, sqrt
+import time
+
+#全角转半角
+def DBC2SBC(ustring):
+ rstring = ''
+ for uchar in ustring:
+  inside_code = ord(uchar)
+  if inside_code == 0x3000:
+     inside_code = 0x0020
+  else:
+     inside_code -= 0xfee0
+  if not (0x0021 <= inside_code and inside_code <= 0x7e):
+   rstring += uchar
+   continue
+  rstring += chr(inside_code)
+ return rstring
+
+#灵图解析
+def lingtu_Geographic_analysis(address):
+    heads={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36'}
+    #api_url='http://api.smartmapx.com/geo?address'
+    api_url_lingtu='http://api.smartmapx.com/geo?address'
+    url=api_url_lingtu+address
+    try:
+      response=request('get',url,headers=heads)
+      api_response=response.json()
+      response.close()
+      lingtu_longitude=api_response['result']['longitude']
+      lingtu_latitude=api_response['result']['latitude']
+      lingtu_longitude_latitude=lingtu_longitude,lingtu_latitude
+      lingtu_socre=api_response['score']
+      lingtu_response_address_DBC=api_response['result']['province']+api_response['result']['city']+api_response['result']['county']+api_response['result']['address']
+      lingtu_response_address=DBC2SBC(lingtu_response_address_DBC)
+      #print(lingtu_longitude_latitude,lingtu_socre,lingtu_response_address)
+      return lingtu_longitude_latitude,lingtu_socre,lingtu_response_address
+    except Exception as e:
+        print()
+
+#天地图解析
+def tianditu_Geographic_analysis(address):
+    heads = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36'}
+    api_url_tianditu = 'http://api.tianditu.gov.cn/geocoder?ds={"keyWord":"'
+    api_url_tianditu_key='"}&tk=YourKey'
+    url = api_url_tianditu + address+api_url_tianditu_key
+    try:
+        response = request('get', url, headers=heads)
+        api_response = response.json()
+        response.close()
+        tianditu_longitude = api_response['location']['lon']
+        tianditu_latitude = api_response['location']['lat']
+        tianditu_longitude_latitude = tianditu_longitude, tianditu_latitude
+        return tianditu_longitude,tianditu_latitude
+    except Exception as e:
+        print()
+#百度解析
+def baidu_Geographic_analysis(address):
+    heads = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36'}
+    api_url_baidu = 'http://api.map.baidu.com/geocoder/v2/?address='
+    api_url_baidu_key='&output=json&ret_coordtype=YourKey'
+    url = api_url_baidu + address+api_url_baidu_key
+    try:
+        response = request('get', url, headers=heads)
+        api_response = response.json()
+        response.close()
+        #print(api_response)
+        baidu_longitude = api_response['result']['location']['lng']
+        baidu_latitude = api_response['result']['location']['lat']
+        baidu_confidengce=api_response['result']['confidence']
+        baidu_comprehension=api_response['result']['comprehension']
+        baidu_longitude_latitude1 = (baidu_longitude,baidu_latitude)
+        #print(baidu_longitude_latitude1,baidu_confidengce,baidu_comprehension)
+        return baidu_longitude_latitude1,baidu_confidengce,baidu_comprehension
+    except Exception as e:
+        print()
+#高德解析
+def gaode_Geographic_analysis(address):
+    heads = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36'}
+    api_url_gaode = 'http://restapi.amap.com/v3/geocode/geo?address='
+    api_url_gaode_key='&output=json&key=YourKey'
+    url = api_url_gaode + address+api_url_gaode_key
+    try:
+        response = request('get', url, headers=heads)
+        api_response = response.json()
+        response.close()
+        gaode_longitude_latitude = api_response['geocodes'][0]['location']
+        #print(gaode_longitude_latitude)
+        gaode_longitde_latitude_split=gaode_longitude_latitude.split(',')
+        #print(gaode_longitde_latitude_split)
+        gaode_formatted_address=api_response['geocodes'][0]['formatted_address']
+        #print(gaode_formatted_address)
+        return gaode_longitde_latitude_split,gaode_formatted_address
+    except Exception as e:
+        print()
+
+#自建坐标直线距离公式
+'''
+def lon_lat_distance(lng1,lat1,lng2,lat2):
+    # 将十进制度数转化为弧度
+    lng1, lat1, lng2, lat2 = map(radians, [float(lng1), float(lat1), float(lng2), float(lat2)])  # 经纬度转换成弧度
+    dlon = lng2 - lng1
+    dlat = lat2 - lat1
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    distance = 2 * asin(sqrt(a)) * 6371 * 1000  # 地球平均半径，6371km
+    distance = round(distance / 1000, 3)
+    return distance
+'''
+
+#获取时间
+localstime=time.strftime("%Y%m%d%H%M%S", time.localtime())
+localstime_str=str(localstime)
+
+
+
+address_save_lon_lat='C:\\%s.csv'%localstime_str
+address_save_distance='C:\\%s1.csv'%localstime_str
+csv_address='C:\\0418.csv'
+open_csv=open(csv_address,'r',encoding='UTF-8')
+read_csv=csv.reader(open_csv)
+poi_address_num=0
+
+#文件列名
+list_colum=['server_code','sercer_address','lingtu_lon_lat','lingtu_score','lingtu_address',
+            'gaode_lon_lat','gaode_formatted_address',
+            'baidu_lon_lat','baidu_confidengce','baidu_comprehension']
+
+with open(address_save_lon_lat, 'a', newline='') as  datacsv:
+ save_csv = csv.writer(datacsv, dialect='excel')
+ save_csv.writerow(list_colum)
+ for ax in read_csv:
+  list=[]
+  poi_address_num=poi_address_num+1
+  poi_SERVER_CODE=ax[2]
+  poi_address=ax[71]+ax[73]+ax[30]
+  print(poi_address)
+  print(poi_address_num)
+  try:
+   lingtu_re=lingtu_Geographic_analysis(poi_address)
+
+   lingtu_longitude_latitude=lingtu_re[0]
+   lingtu_score=lingtu_re[1]
+   lingtu_address=lingtu_re[2]
+   print('灵图接口解析完成')
+  except Exception as  e:
+      print(e)
+  try:
+   baidu_re=baidu_Geographic_analysis(poi_address)
+   #print(baidu_re)
+   baidu_longitude_latitude=baidu_re[0]
+   baidu_confidengce=baidu_re[1]
+   baidu_comprehension=baidu_re[2]
+   print('百度接口解析完成')
+  except Exception as e:
+      print(e)
+  try:
+   gaode_re=gaode_Geographic_analysis(poi_address)
+   gaode_longitude_latitude=gaode_re[0]
+   gaode_formatted_address=gaode_re[1]
+   print('高德接口解析完成')
+  except Exception as e:
+      print(e)
+  try:
+   list.append(poi_SERVER_CODE)
+   list.append(poi_address)
+   list.append(lingtu_longitude_latitude)
+   list.append(lingtu_score)
+   list.append(lingtu_address)
+   list.append(gaode_longitude_latitude)
+   list.append(gaode_formatted_address)
+   list.append(baidu_longitude_latitude)
+   list.append(baidu_comprehension)
+   list.append(baidu_confidengce)
+   print(list)
+  except Exception as e:
+      print(e)
+  save_csv.writerow(list)
+
