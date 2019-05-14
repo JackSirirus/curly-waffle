@@ -1,0 +1,16 @@
+import os
+#输入文件夹地址
+filtedir=r'C:\Users\Administrator\Downloads\ts1'
+#输入存放地址并确定存放格式
+new_fil=u'%s\out.mp4'%filtedir
+f=open(new_fil,'wb+')
+#合成遍历
+for i in range(0,100):#遍历文件100个
+    #读取视频文件的名称，最好按顺序命名1-100
+    filepath=u"%s\\173267fb232116e941e74c27722d30fa.m3u8.0.%s.ts"%(filtedir,i)
+    print(filepath)
+    #合成
+    for line in open(filepath,'rb'):
+        f.write(line)
+    f.flush()
+f.close()
