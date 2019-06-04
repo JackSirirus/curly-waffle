@@ -1,0 +1,118 @@
+# -*- coding: utf-8 -*-
+#python3.7
+#writer by ysm
+import csv,os
+from requests import request
+import time
+from multiprocessing import Process
+import MySQLdb
+#注意，由于使用sql写入，在数据量较大的时候最好先将表格建立address的索引，这样可以提升效率
+
+#获取高德解析结果
+def gaode_Geographic_analysis(address):
+    heads = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36', 'Connection': 'close'}
+    api_url_gaode = 'http://restapi.amap.com/v3/geocode/geo?address='
+    api_url_gaode_key='&output=json&key=你的高德key'
+    url = api_url_gaode + address+api_url_gaode_key
+    try:
+        response = request('get', url, headers=heads,timeout=1)
+        api_response = response.json()
+        response.close()
+        print(api_response)
+        gaode_longitude_latitude_split= api_response['geocodes'][0]['location']
+        #gaode_longitude_latitude_split=(gaode_longitude_latitude.split(','))
+        #print(type(gaode_longitude_latitude))
+        #print(gaode_longitde_latitude_split)
+        gaode_status=api_response['status']
+        gaode_formatted_address=api_response['geocodes'][0]['formatted_address']
+        print(gaode_formatted_address)
+        gaode_country=api_response['geocodes'][0]['country']
+        gaode_province=api_response['geocodes'][0]['province']
+        gaode_citycode=api_response['geocodes'][0]['citycode']
+        gaode_city=api_response['geocodes'][0]['city']
+        #print(gaode_city)
+        gaode_district=api_response['geocodes'][0]['district']
+        gaode_township=api_response['geocodes'][0]['township']
+        gaode_adcode=api_response['geocodes'][0]['adcode']
+        gaode_street=api_response['geocodes'][0]['street']
+        gaode_number=api_response['geocodes'][0]['number']
+        gaode_level=api_response['geocodes'][0]['level']
+        #print(gaode_status)
+        return gaode_longitude_latitude_split,gaode_formatted_address,gaode_adcode,gaode_country,gaode_province,gaode_city,gaode_citycode,gaode_district,gaode_township,gaode_street,gaode_number,gaode_level,gaode_status
+        print('地址解析完成')
+    except Exception as e:
+        print(e)
+
+#清除空集
+def delnull(nulltext):
+    if nulltext == []:
+        nulltext=''
+    else:
+        nulltext=nulltext
+    return nulltext
+    print('null get')
+
+
+def sql(sql_find):
+    #连接sql数据库
+    db=MySQLdb.connect(host='127.0.0.1',user='gaode_test',passwd='12345678',db='test',charset='utf8')
+    #设置游标
+    cursor=db.cursor()
+    try:
+       sql2_stat=time.clock()
+       sql2=sql_find
+       cursor.execute(sql2)@查询执行
+       res=cursor.fetchall()
+       sql2_end=time.clock()
+       print(sql2_end-sql2_stat)
+       #print(res)
+       n=0
+       while len(res):
+         #print(res[n])
+         ress=str(res[n])
+         ress=ress.replace("('",'')
+         ress=ress.replace("',)",'')
+         print(ress)
+         try:
+            gaode_start=time.clock()
+            add_gaode=gaode_Geographic_analysis(ress)
+            print(add_gaode)
+            gaode_end=time.clock()
+            print(gaode_end-gaode_start)#查询用时显示
+            lonlat=delnull(add_gaode[0])
+            #print('获取坐标')
+            formatted_address=delnull(add_gaode[1])
+            #print('获取解析对应地址')
+            adcode=delnull(add_gaode[2])
+            country=delnull(add_gaode[3])
+            province=delnull(add_gaode[4])
+            city=delnull(add_gaode[5])
+            citycode=delnull(add_gaode[6])
+            district=delnull(add_gaode[7])
+            township=delnull(add_gaode[8])
+            street=delnull(add_gaode[9])
+            number=delnull(add_gaode[10])
+            level=delnull(add_gaode[11])
+            status=delnull(add_gaode[12])
+            print(lonlat,formatted_address,adcode,country,province,city,citycode,district,township,street,number,level,status,ress)
+            sql1_start=time.clock()
+            sql1="UPDATE 目标表  SET longitde_latitude='%s',formatted_address='%s',adcode='%s',country='%s',province='%s', city='%s',citycode='%s',district='%s',township='%s',street='%s',number='%s',`level`='%s' ,flag='%s' where address='%s'"%(lonlat,formatted_address,adcode,country,province,city,citycode,district,township,street,number,level,status,ress)
+            print(sql1)
+            cursor.execute(sql1)
+            db.commit()
+            sql1_end=time.clock()
+            print(sql1_end-sql1_start)#写入用时显示
+            print('写入完成')
+         except Exception as e:
+             print(e)
+         n=n+1
+         print(n)
+    except Exception as e:
+        print(e)
+        db.rollback
+    db.close()
+
+if __name__ == '__main__':
+     p=Process(target=sql,args=('输入查询sql，找到地址',))
+     p.start()#开始并发
+     p.join()#执行
