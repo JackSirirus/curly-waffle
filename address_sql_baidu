@@ -1,0 +1,125 @@
+# -*- coding: utf-8 -*-
+#python3.7
+#writer by ysm
+import threading
+from requests import request
+import time
+from multiprocessing import Process
+import MySQLdb
+
+#获取高德解析结果
+def baidu_Geographic_analysis(address):
+    heads = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.79 Safari/537.36', 'Connection': 'close'}
+    api_url_gaode = 'http://api.map.baidu.com/geocoding/v3/?address='
+    api_url_gaode_key='&output=json&ret_coordtype=bd09mc&ak=baidu_key'#baidu_key为百度web端API的key
+    url = api_url_gaode + address+api_url_gaode_key
+    try:
+        response = request('get', url, headers=heads)
+        api_response = response.json()
+        response.close()
+        #print(api_response)
+        print(api_response)
+        try:
+            baidu_longitude = api_response['result']['location']['lng']
+        except:
+            baidu_longitude=[]
+        try:
+             baidu_latitude = api_response['result']['location']['lat']
+
+        except:
+            baidu_latitude=[]
+        try:
+            baidu_confidengce=api_response['result']['confidence']
+
+        except:
+            baidu_confidengce=[]
+        try:
+            baidu_comprehension=api_response['result']['comprehension']
+        except:
+            baidu_comprehension=[]
+        try:
+            baidu_precise=api_response['result']['precise']
+        except:
+            baidu_precise=[]
+        try:
+            baidu_level=api_response['result']['level']
+        except:
+            baidu_level=[]
+        return baidu_longitude,baidu_latitude,baidu_precise,baidu_confidengce,baidu_comprehension,baidu_level
+        print('地址解析完成')
+    except Exception as e:
+        print(e)
+
+#清除空集
+def delnull(nulltext):
+    if nulltext == []:
+        nulltext=''
+    else:
+        nulltext=nulltext
+    return nulltext
+    print('null get')
+
+
+def sql(sql_find):
+    #连接sql数据库
+    db=MySQLdb.connect(host='127.0.0.1',user='baidu_test',passwd='12345678',db='test',charset='utf8')
+    #设置游标
+    cursor=db.cursor()
+    try:
+       sql2_stat=time.clock()
+       sql2=sql_find
+       cursor.execute(sql2)
+       res=cursor.fetchall()
+       sql2_end=time.clock()
+       print(sql2_end-sql2_stat)
+       #print(res)
+       n=0
+       while len(res):
+         #print(res[n])
+         ress=str(res[n])
+         ress=ress.replace("('",'')
+         ress=ress.replace("',)",'')
+         print(ress)
+         try:
+            gaode_start=time.clock()
+            add_baidu=baidu_Geographic_analysis(ress)
+            print(add_baidu)
+            print('调用百度API成功')
+            gaode_end=time.clock()
+            print(gaode_end-gaode_start)
+            lon=add_baidu[0]
+            print('获取经度成功')
+            lat=add_baidu[1]
+            print('获取维度成功')
+            precise=add_baidu[2]
+            print('获取精确查找值成功')
+            confidence=add_baidu[3]
+            print('获取打点绝对精度值成功')
+            comprehension=add_baidu[4]
+            print('获取描述地址理解程度值成功')
+            level=add_baidu[5]
+            print('获取地址类型成功')
+            print(lon,lat,precise,confidence,comprehension,level)
+            sql1_start=time.clock()
+            #sql1为写入sql语句，根据不同表的内容不同而不同
+            sql1="UPDATE `基础数据` SET `基础数据`.longitude='%s',`基础数据`.latitude='%s',`基础数据`.precise='%s',`基础数据`.confidengce='%s',`基础数据`.comprehension='%s',`基础数据`.level='%s',`基础数据`.flag=1 where `基础数据`.`地址`='%s'"%(lon,lat,precise,confidence,comprehension,level,ress)
+            print(sql1)
+            cursor.execute(sql1)
+            db.commit()
+            sql1_end=time.clock()
+            print(sql1_end-sql1_start)
+            print('写入完成')
+
+         except Exception as e:
+             print(e)
+         n=n+1
+         print(n)
+    except Exception as e:
+        print(e)
+        db.rollback
+    db.close()
+
+if __name__ == '__main__':
+     p=Process(target=sql,args=('select',))#select为查找地址的sql语句
+     p.start()
+     p.join()
