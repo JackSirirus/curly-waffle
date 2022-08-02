@@ -10,9 +10,9 @@ def pic2pdf_1(img_path, pdf_path, pdf_name):
 
     for img in sorted(glob.glob(img_path + "\*.jpg")):
         imgdoc = fitz.open(img)
-        pdfbytes = imgdoc.convertToPDF()
+        pdfbytes = imgdoc.convert_to_pdf()
         imgpdf = fitz.open("pdf", pdfbytes)
-        doc.insertPDF(imgpdf)
+        doc.insert_pdf(imgpdf)
     doc.save(pdf_path + pdf_name)
     doc.close()
 
@@ -23,9 +23,9 @@ def pic2pdf_2(img_path, pdf_path, img_list, pdf_name):
 
     for img in sorted(pic_list):
         imgdoc = fitz.open(img)
-        pdfbytes = imgdoc.convertToPDF()
+        pdfbytes = imgdoc.convert_to_pdf()
         imgpdf = fitz.open("pdf", pdfbytes)
-        doc.insertPDF(imgpdf)
+        doc.insert_pdf(imgpdf)
     doc.save(pdf_path + pdf_name)
     doc.close()
 
@@ -50,9 +50,9 @@ def pic2pdf_4(img_path, pdf_path):
     for img in sorted(glob.glob(img_path + "\*.jpg")):
         doc = fitz.open()
         imgdoc = fitz.open(img)
-        pdfbytes = imgdoc.convertToPDF()
+        pdfbytes = imgdoc.convert_to_pdf()
         imgpdf = fitz.open("pdf", pdfbytes)
-        doc.insertPDF(imgpdf)
+        doc.insert_pdf(imgpdf)
     
         pdf_name='\%s.pdf'%(n)
         doc.save(pdf_path + pdf_name)
